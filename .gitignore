@@ -1,2 +1,9 @@
 env 
 .env
+.venv
+__pycache__/
+*.pyc
+*.pyo
+.vscode
+migrations
+session_name.session
