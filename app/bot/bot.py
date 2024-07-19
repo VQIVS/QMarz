@@ -1,21 +1,21 @@
 import os
 from dotenv import load_dotenv
-from telethon import TelegramClient
+from telebot import TeleBot
+from app.bot.handler import setup_handlers
 
+# Load environment variables
 load_dotenv()
 
-# Get environment variables
-api_id = os.getenv('API_ID')
-api_hash = os.getenv('API_HASH')
-bot_token = os.getenv('BOT_TOKEN')
+BOT_TOKEN = os.getenv("BOT_TOKEN")
+bot = TeleBot(BOT_TOKEN)
 
-# Initialize Telegram client
-client = TelegramClient('session_name', api_id, api_hash)
-
-async def main():
-    await client.start(bot_token=bot_token)
-    print("Bot is running...")
+# Set up handlers
+setup_handlers(bot)
 
 
-with client:
-    client.loop.run_until_complete(main())
+def main():
+    bot.infinity_polling()
+
+
+if __name__ == "__main__":
+    main()
