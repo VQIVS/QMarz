@@ -6,5 +6,4 @@ __pycache__/
 *.pyo
 .vscode
 migrations
-session_name.session
-app.db
+bot.db
