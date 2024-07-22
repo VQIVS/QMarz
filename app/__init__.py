@@ -1,7 +1,6 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
-import os
 
 db = SQLAlchemy()
 migrate = Migrate()
@@ -18,6 +17,8 @@ def create_app():
         from app.models.user import User
         from app.models.order import Order
         from app.models.subscription import Subscription
+        from app.models.tutorial import Tutorial
+
 
         db.create_all()
 
