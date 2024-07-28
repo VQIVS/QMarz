@@ -11,4 +11,4 @@ class Subscription(db.Model):
     
 
     def __repr__(self):
-        return f"Subscription('{self.plan}', '{self.price}', '{self.duration_months} months')"
+        return f"Subscription('{self.plan}', '{self.price}', '{self.duration_days} months')"
