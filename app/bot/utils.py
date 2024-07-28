@@ -1,6 +1,15 @@
 import requests
 import logging
 
+logging.basicConfig(
+    level=logging.DEBUG, 
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler("app.log"),
+        logging.StreamHandler() 
+    ]
+)
+
 class APIManager:
     def __init__(self, api_url):
         """
@@ -29,7 +38,8 @@ class APIManager:
         payload = {
             "username": username,
             "proxies": {"vmess": {}},
-            "inbounds": {"vmess": []},
+            "inbounds": {"vmess": [],
+                        "vless":[]},
             "expire": None,
             "data_limit": data_limit * 1024**3,
             "data_limit_reset_strategy": "no_reset",
@@ -44,12 +54,23 @@ class APIManager:
             "Authorization": f"Bearer {access_token}",
         }
         try:
+            logging.debug(f"Creating user {username} with payload: {payload}")
             response = requests.post(url, json=payload, headers=headers)
             response.raise_for_status()
+            logging.info(f"User {username} created successfully.")
             return response.json()
-        except requests.exceptions.RequestException as e:
-            logging.error(f"Error occurred while creating user {username}: {e}")
-            return None
+        except requests.exceptions.HTTPError as http_err:
+            logging.error(f"HTTP error occurred while creating user {username}: {http_err} - Response: {http_err.response.content}")
+        except requests.exceptions.ConnectionError as conn_err:
+            logging.error(f"Connection error occurred while creating user {username}: {conn_err}")
+        except requests.exceptions.Timeout as timeout_err:
+            logging.error(f"Timeout occurred while creating user {username}: {timeout_err}")
+        except requests.exceptions.RequestException as req_err:
+            logging.error(f"Error occurred while creating user {username}: {req_err}")
+        except Exception as e:
+            logging.critical(f"Unexpected error occurred while creating user {username}: {e}", exc_info=True)
+        
+        return None
 
     def get_token(self, username, password):
         """
@@ -62,7 +83,7 @@ class APIManager:
         Returns:
             str: The access token if successful, None otherwise.
         """
-        url = f"{self.api_url}/admin/token"
+        url = f"{self.api_url}api/admin/token"
         data = {"username": username, "password": password}
         try:
             response = requests.post(url, data=data)
