@@ -12,3 +12,6 @@ class SubscriptionRepository:
         db.session.add(new_subscription)
         db.session.commit()
         return new_subscription
+    
+    def get_by_user_id(self, user_id):
+        return Subscription.query.filter_by(user_id=user_id).all()
