@@ -1,4 +1,9 @@
-from telebot.types import Message
+from telebot.types import (
+    Message,
+    CallbackQuery,
+    InlineKeyboardButton,
+    InlineKeyboardMarkup,
+)
 from telebot import TeleBot
 from app import create_app
 from app.repositories.user_repository import UserRepository
@@ -18,6 +23,8 @@ PASSWORD = os.getenv("PASSWORD")
 TEST_LIMIT = float(os.getenv("TEST_LIMIT", 0))
 TEST_EXPIRE_DAYS = int(os.getenv("TEST_EXPIRE_DAYS", 0))
 SUPPORT_ID = os.getenv("SUPPORT_ID")
+CHANNEL_ID = os.getenv("CHANNEL_ID")
+CHANNEL_USERNAME = os.getenv("CHANNEL_USERNAME")
 
 # Initialize API Manager and get token
 apiManager = APIManager(API_URL)
@@ -30,27 +37,72 @@ keyboard = Keyboard()
 # Get logger instance
 logger = get_logger("app_logger")
 
+
 class ManiHandler:
     def __init__(self, bot: TeleBot):
         self.bot = bot
 
+    def is_member(self, user_id):
+        try:
+            member_status = self.bot.get_chat_member(CHANNEL_ID, user_id)
+            return member_status.status in ["member", "administrator", "creator"]
+        except Exception as e:
+            logger.error(f"Error checking membership status: {e}")
+            return False
+
+    def prompt_to_join(self, user_id):
+        self.bot.send_message(
+            user_id,
+            f"Please join our channel first: https://t.me/{CHANNEL_USERNAME}",
+            reply_markup=keyboard.joinButton,
+        )
+
+    def handle_join(self, query: CallbackQuery):
+        user_id = query.from_user.id
+        if self.is_member(user_id):
+            self.bot.send_message(
+                user_id,
+                "Thank you for joining the channel! You can now use the bot.",
+                reply_markup=keyboard.mainKeyboard,
+            )
+        else:
+            self.bot.send_message(
+                user_id,
+                "You must join the channel to use the bot. Please join and click 'I joined' again.",
+                reply_markup=keyboard.joinButton,
+            )
+
     def start(self, message: Message):
+        user_id = message.chat.id
+        if not self.is_member(user_id):
+            self.prompt_to_join(user_id)
+            return
+
         user_id = str(message.chat.id)
         try:
             with app.app_context():
                 userRepo = UserRepository()
                 user = userRepo.create(user_id)
-                self.bot.send_message(user_id, "Welcome!", reply_markup=keyboard.mainKeyboard)
+                self.bot.send_message(
+                    user_id, "Welcome!", reply_markup=keyboard.mainKeyboard
+                )
                 logger.info(f"User {user_id} created and welcomed.")
         except ValueError as e:
             if "User with this username already exists" in str(e):
-                self.bot.send_message(user_id, f"Welcome back user: {user_id}", reply_markup=keyboard.mainKeyboard)
+                self.bot.send_message(
+                    user_id,
+                    f"Welcome back user: {user_id}",
+                    reply_markup=keyboard.mainKeyboard,
+                )
                 logger.info(f"Existing user {user_id} welcomed back.")
             else:
                 self.bot.send_message(user_id, f"Error: {str(e)}")
                 logger.error(f"Error creating user {user_id}: {str(e)}")
         except Exception as e:
-            logger.error(f"Unexpected error occurred in start method for user {user_id}: {e}", exc_info=True)
+            logger.error(
+                f"Unexpected error occurred in start method for user {user_id}: {e}",
+                exc_info=True,
+            )
             self.bot.send_message(user_id, f"An unexpected error occurred: {str(e)}")
 
     def tutorial(self, message: Message):
@@ -67,20 +119,30 @@ class ManiHandler:
 
     def test_sub(self, message: Message):
         user_id = str(message.chat.id)
-        logger.debug(f"Initiating test_sub for user {user_id} with limit {TEST_LIMIT} and expire days {TEST_EXPIRE_DAYS}")
-        
+        logger.debug(
+            f"Initiating test_sub for user {user_id} with limit {TEST_LIMIT} and expire days {TEST_EXPIRE_DAYS}"
+        )
+
         try:
             with app.app_context():
                 subRepo = SubscriptionRepository()
                 user_subscriptions = subRepo.get_by_user_id(user_id)
-                
+
                 # Check if any of the user's subscriptions have a "test" plan
                 if any(sub.plan == "test" for sub in user_subscriptions):
-                    self.bot.send_message(user_id, "You have already gotten a test plan subscription before.")
+                    self.bot.send_message(
+                        user_id,
+                        "You have already gotten a test plan subscription before.",
+                    )
                     logger.info(f"User {user_id} already has a test plan subscription.")
                     return
 
-                res = apiManager.create_user(username=user_id, data_limit=TEST_LIMIT, expire=TEST_EXPIRE_DAYS, access_token=token)
+                res = apiManager.create_user(
+                    username=user_id,
+                    data_limit=TEST_LIMIT,
+                    expire=TEST_EXPIRE_DAYS,
+                    access_token=token,
+                )
                 if res is not None:
                     subscription_url = res.get("subscription_url")
                     proxies = res.get("proxies")
@@ -95,10 +157,23 @@ class ManiHandler:
                     self.bot.send_message(user_id, text)
                     logger.info(f"Test subscription created for user {user_id}.")
                 else:
-                    self.bot.send_message(user_id, "خطایی رخ داده است. لطفا دوباره تلاش کنید")
-                    sub = subRepo.create(plan="test", price=0, duration_days=1, user_id=user_id)
-                    self.bot.send_message(user_id, "خطایی رخ داده است. لطفا دوباره تلاش کنید")
-                    logger.warning(f"Subscription creation failed for user {user_id}, fallback created.")
+                    self.bot.send_message(
+                        user_id, "خطایی رخ داده است. لطفا دوباره تلاش کنید"
+                    )
+                    sub = subRepo.create(
+                        plan="test", price=0, duration_days=1, user_id=user_id
+                    )
+                    self.bot.send_message(
+                        user_id, "خطایی رخ داده است. لطفا دوباره تلاش کنید"
+                    )
+                    logger.warning(
+                        f"Subscription creation failed for user {user_id}, fallback created."
+                    )
         except Exception as e:
-            logger.error(f"Unexpected error occurred in test_sub method for user {user_id}: {e}", exc_info=True)
-            self.bot.send_message(user_id, "An unexpected error occurred. Please try again later.")
+            logger.error(
+                f"Unexpected error occurred in test_sub method for user {user_id}: {e}",
+                exc_info=True,
+            )
+            self.bot.send_message(
+                user_id, "An unexpected error occurred. Please try again later."
+            )
