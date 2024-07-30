@@ -14,6 +14,7 @@ import os
 from .utils import APIManager
 import uuid
 from app.utils.logger_config import get_logger
+from app.repositories.referral_repository import ReferralRepository
 
 # Initialize environment variables
 load_dotenv(override=True)
@@ -25,6 +26,7 @@ TEST_EXPIRE_DAYS = int(os.getenv("TEST_EXPIRE_DAYS", 0))
 SUPPORT_ID = os.getenv("SUPPORT_ID")
 CHANNEL_ID = os.getenv("CHANNEL_ID")
 CHANNEL_USERNAME = os.getenv("CHANNEL_USERNAME")
+YOUR_BOT_USERNAME = os.getenv("YOUR_BOT_USERNAME")
 
 # Initialize API Manager and get token
 apiManager = APIManager(API_URL)
@@ -177,3 +179,40 @@ class ManiHandler:
             self.bot.send_message(
                 user_id, "An unexpected error occurred. Please try again later."
             )
+
+    def send_referral_link(self, message: Message):
+        user_id = message.chat.id
+        referral_link = f"https://t.me/{YOUR_BOT_USERNAME}?start={user_id}"
+        self.bot.send_message(user_id, f"Share this link with your friends: {referral_link}")
+
+
+    def add_referral(self, referrer_id, referred_id):
+        try:
+            with app.app_context():
+                referralRepo = ReferralRepository()
+                referralRepo.add_referral(referrer_id, referred_id)
+                logger.info(f"Referral recorded: {referrer_id} referred {referred_id}")
+        except Exception as e:
+            logger.error(f"Error recording referral from {referrer_id} to {referred_id}: {e}")
+
+    def print_points(self, user_id):
+        try:
+            with app.app_context():
+                referralRepo = ReferralRepository()
+                points = referralRepo.get_points(user_id)
+                print(f"User {user_id} has {points} points")  # Print points for verification
+                self.bot.send_message(user_id, f"User {user_id} has {points} points")
+        except Exception as e:
+            logger.error(f"Error retrieving points for user {user_id}: {e}")
+
+    def show_points(self, message: Message):
+        user_id = message.chat.id
+        try:
+            with app.app_context():
+                referralRepo = ReferralRepository()
+                points = referralRepo.get_points(user_id)
+                self.bot.send_message(user_id, f"You have {points} points.")
+                logger.info(f"User {user_id} has {points} points")
+        except Exception as e:
+            logger.error(f"Error retrieving points for user {user_id}: {e}")
+            self.bot.send_message(user_id, "An error occurred while retrieving your points.")
