@@ -58,7 +58,14 @@ class Keyboard:
             types.KeyboardButton("🛍 خرید عمده️"),
             types.KeyboardButton("👨‍👩‍👧‍👧 معرفی به دوستان"),
         ],
+        [types.KeyboardButton("🏆 امتیازات")],  # New button for points
     ]
     mainKeyboard = KeyboardCreator.create(mainButtons)
     tutorialKeyboard = KeyboardCreator.createInlineTutorial()
     joinButton = KeyboardCreator.create_join_button()
+
+    # Points keyboard
+    pointsKeyboard = KeyboardCreator.create([
+        [types.KeyboardButton("👀 مشاهده امتیازات")],
+        [types.KeyboardButton("🔙 بازگشت به منو اصلی")]
+    ])
