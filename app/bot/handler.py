@@ -1,5 +1,6 @@
 from telebot import TeleBot
 from app.bot.operation import ManiHandler
+from app.bot.keybaord import Keyboard
 
 
 def setup_handlers(bot: TeleBot):
@@ -20,6 +21,22 @@ def setup_handlers(bot: TeleBot):
     @bot.message_handler(func=lambda message: message.text == "🧪دریافت سرور تست")
     def test(message):
         handler.test_sub(message)
+
+    @bot.message_handler(func=lambda message: message.text == "👨‍👩‍👧‍👧 معرفی به دوستان")
+    def refer(message):
+        handler.send_referral_link(message)
+
+    @bot.message_handler(func=lambda message: message.text == "🏆 امتیازات")
+    def points_menu(message):
+        handler.bot.send_message(message.chat.id, "Choose an option:", reply_markup=Keyboard.pointsKeyboard)
+
+    @bot.message_handler(func=lambda message: message.text == "👀 مشاهده امتیازات")
+    def show_points(message):
+        handler.show_points(message)
+
+    @bot.message_handler(func=lambda message: message.text == "🔙 بازگشت به منو اصلی")
+    def go_back_to_main(message):
+        handler.bot.send_message(message.chat.id, "Returning to the main menu.", reply_markup=Keyboard.mainKeyboard)
 
     @bot.callback_query_handler(func=lambda query: query.data == "joined")
     def handle_join(query):
