@@ -1,10 +1,19 @@
 from telebot import TeleBot
 from app.bot.operation import ManiHandler
 from app.bot.keybaord import Keyboard
+from telebot.types import CallbackQuery
 
 
 def setup_handlers(bot: TeleBot):
     handler = ManiHandler(bot)
+
+    @bot.message_handler(func=lambda message: message.text == "⭐️ خرید سرویس")
+    def buy_service(message):
+        handler.show_service_options(message)
+
+    @bot.callback_query_handler(func=lambda call: call.data in ["service_1T", "service_2T", "service_3T"])
+    def service_selection(call: CallbackQuery):
+        handler.handle_service_selection(call)
 
     @bot.message_handler(commands=["start"])
     def handle_start(message):
