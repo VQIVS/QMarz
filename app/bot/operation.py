@@ -27,6 +27,12 @@ SUPPORT_ID = os.getenv("SUPPORT_ID")
 CHANNEL_ID = os.getenv("CHANNEL_ID")
 CHANNEL_USERNAME = os.getenv("CHANNEL_USERNAME")
 YOUR_BOT_USERNAME = os.getenv("YOUR_BOT_USERNAME")
+SERVICE_1T = os.getenv("SERVICE_1T")
+SERVICE_1P = os.getenv("SERVICE_1P")
+SERVICE_2T = os.getenv("SERVICE_2T")
+SERVICE_2P = os.getenv("SERVICE_2P")
+SERVICE_3T = os.getenv("SERVICE_3T")
+SERVICE_3P = os.getenv("SERVICE_3P")
 
 # Initialize API Manager and get token
 apiManager = APIManager(API_URL)
@@ -106,6 +112,30 @@ class ManiHandler:
                 exc_info=True,
             )
             self.bot.send_message(user_id, f"An unexpected error occurred: {str(e)}")
+
+    def handle_service_selection(self, query: CallbackQuery):
+        user_id = query.from_user.id
+        service_choice = query.data
+
+        if service_choice == "service_1T":
+            response_text = f"You selected the {SERVICE_1T} plan."
+        elif service_choice == "service_2T":
+            response_text = f"You selected the {SERVICE_2T} plan."
+        elif service_choice == "service_3T":
+            response_text = f"You selected the {SERVICE_3T} plan."
+        else:
+            response_text = "Invalid selection."
+
+        self.bot.send_message(user_id, response_text)
+
+    def show_service_options(self, message: Message):
+        user_id = message.chat.id
+        markup = InlineKeyboardMarkup()
+        markup.add(InlineKeyboardButton(SERVICE_1T, callback_data="service_1T"))
+        markup.add(InlineKeyboardButton(SERVICE_2T, callback_data="service_2T"))
+        markup.add(InlineKeyboardButton(SERVICE_3T, callback_data="service_3T"))
+
+        self.bot.send_message(user_id, "Please select a service plan:", reply_markup=markup)
 
     def tutorial(self, message: Message):
         user_id = str(message.chat.id)
