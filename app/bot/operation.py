@@ -27,12 +27,12 @@ SUPPORT_ID = os.getenv("SUPPORT_ID")
 CHANNEL_ID = os.getenv("CHANNEL_ID")
 CHANNEL_USERNAME = os.getenv("CHANNEL_USERNAME")
 YOUR_BOT_USERNAME = os.getenv("YOUR_BOT_USERNAME")
-SERVICE_1T = os.getenv("SERVICE_1T")
-SERVICE_1P = os.getenv("SERVICE_1P")
-SERVICE_2T = os.getenv("SERVICE_2T")
-SERVICE_2P = os.getenv("SERVICE_2P")
-SERVICE_3T = os.getenv("SERVICE_3T")
-SERVICE_3P = os.getenv("SERVICE_3P")
+SERVICE_1TEXT = os.getenv("SERVICE_1TEXT")
+SERVICE_1PRICE = os.getenv("SERVICE_1PRICE")
+SERVICE_2TEXT = os.getenv("SERVICE_2TEXT")
+SERVICE_2PRICE = os.getenv("SERVICE_2PRICE")
+SERVICE_3TEXT = os.getenv("SERVICE_3TEXT")
+SERVICE_3PRICE = os.getenv("SERVICE_3PRICE")
 
 # Initialize API Manager and get token
 apiManager = APIManager(API_URL)
@@ -117,12 +117,12 @@ class ManiHandler:
         user_id = query.from_user.id
         service_choice = query.data
 
-        if service_choice == "service_1T":
-            response_text = f"You selected the {SERVICE_1T} plan."
-        elif service_choice == "service_2T":
-            response_text = f"You selected the {SERVICE_2T} plan."
-        elif service_choice == "service_3T":
-            response_text = f"You selected the {SERVICE_3T} plan."
+        if service_choice == "service_1TEXT":
+            response_text = f"You selected the {SERVICE_1TEXT} plan."
+        elif service_choice == "service_2TEXT":
+            response_text = f"You selected the {SERVICE_2TEXT} plan."
+        elif service_choice == "service_3TEXT":
+            response_text = f"You selected the {SERVICE_3TEXT} plan."
         else:
             response_text = "Invalid selection."
 
@@ -131,9 +131,9 @@ class ManiHandler:
     def show_service_options(self, message: Message):
         user_id = message.chat.id
         markup = InlineKeyboardMarkup()
-        markup.add(InlineKeyboardButton(SERVICE_1T, callback_data="service_1T"))
-        markup.add(InlineKeyboardButton(SERVICE_2T, callback_data="service_2T"))
-        markup.add(InlineKeyboardButton(SERVICE_3T, callback_data="service_3T"))
+        markup.add(InlineKeyboardButton(SERVICE_1TEXT, callback_data="service_1TEXT"))
+        markup.add(InlineKeyboardButton(SERVICE_2TEXT, callback_data="service_2TEXT"))
+        markup.add(InlineKeyboardButton(SERVICE_3TEXT, callback_data="service_3TEXT"))
 
         self.bot.send_message(user_id, "Please select a service plan:", reply_markup=markup)
 
