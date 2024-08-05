@@ -11,7 +11,7 @@ def setup_handlers(bot: TeleBot):
     def buy_service(message):
         handler.show_service_options(message)
 
-    @bot.callback_query_handler(func=lambda call: call.data in ["service_1T", "service_2T", "service_3T"])
+    @bot.callback_query_handler(func=lambda call: call.data in ["service_1TEXT", "service_2TEXT", "service_3TEXT"])
     def service_selection(call: CallbackQuery):
         handler.handle_service_selection(call)
 
