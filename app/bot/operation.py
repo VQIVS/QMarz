@@ -29,10 +29,14 @@ CHANNEL_USERNAME = os.getenv("CHANNEL_USERNAME")
 YOUR_BOT_USERNAME = os.getenv("YOUR_BOT_USERNAME")
 SERVICE_1TEXT = os.getenv("SERVICE_1TEXT")
 SERVICE_1PRICE = os.getenv("SERVICE_1PRICE")
+SERVICE_1EXPIRE = os.getenv("SERVICE_1EXPIRE")
 SERVICE_2TEXT = os.getenv("SERVICE_2TEXT")
 SERVICE_2PRICE = os.getenv("SERVICE_2PRICE")
+SERVICE_2EXPIRE = os.getenv("SERVICE_2EXPIRE")
 SERVICE_3TEXT = os.getenv("SERVICE_3TEXT")
 SERVICE_3PRICE = os.getenv("SERVICE_3PRICE")
+SERVICE_3EXPIRE = os.getenv("SERVICE_3EXPIRE")
+PAYMENT_CHANNEL_ID = os.getenv("PAYMENT_CHANNEL_ID")
 
 # Initialize API Manager and get token
 apiManager = APIManager(API_URL)
@@ -118,15 +122,20 @@ class ManiHandler:
         service_choice = query.data
 
         if service_choice == "service_1TEXT":
-            response_text = f"You selected the {SERVICE_1TEXT} plan."
+            response_text = f"You selected the {SERVICE_1TEXT} plan.\nPrice: {SERVICE_1PRICE}\nExpires in: {SERVICE_1EXPIRE}"
         elif service_choice == "service_2TEXT":
-            response_text = f"You selected the {SERVICE_2TEXT} plan."
+            response_text = f"You selected the {SERVICE_2TEXT} plan.\nPrice: {SERVICE_2PRICE}\nExpires in: {SERVICE_2EXPIRE}"
         elif service_choice == "service_3TEXT":
-            response_text = f"You selected the {SERVICE_3TEXT} plan."
+            response_text = f"You selected the {SERVICE_3TEXT} plan.\nPrice: {SERVICE_3PRICE}\nExpires in: {SERVICE_3EXPIRE}"
         else:
             response_text = "Invalid selection."
 
-        self.bot.send_message(user_id, response_text)
+        markup = InlineKeyboardMarkup()
+        markup.row_width = 2
+        markup.add(InlineKeyboardButton("تایید", callback_data="confirm"),
+                   InlineKeyboardButton("کد تخفیف دارم", callback_data="discount_code"))
+
+        self.bot.send_message(user_id, response_text, reply_markup=markup)
 
     def show_service_options(self, message: Message):
         user_id = message.chat.id
@@ -136,6 +145,34 @@ class ManiHandler:
         markup.add(InlineKeyboardButton(SERVICE_3TEXT, callback_data="service_3TEXT"))
 
         self.bot.send_message(user_id, "Please select a service plan:", reply_markup=markup)
+
+    def handle_confirm(self, query: CallbackQuery):
+        user_id = query.from_user.id
+        self.bot.send_message(user_id, "Please send the picture of your payment.")
+
+    def handle_payment_picture(self, message: Message):
+        user_id = message.chat.id
+        if message.photo:
+            file_id = message.photo[-1].file_id
+            file_info = self.bot.get_file(file_id)
+            file_data = self.bot.download_file(file_info.file_path)
+
+            # Send the picture to the payment channel
+            self.bot.send_photo(PAYMENT_CHANNEL_ID, file_data, caption=f"Payment from user {user_id}")
+
+            self.bot.send_message(user_id, "Your payment has been received and is under review.")
+
+    def handle_payment_confirmation(self, message: Message):
+        if message.reply_to_message and "Payment from user" in message.reply_to_message.caption:
+            user_id = message.reply_to_message.caption.split()[-1]
+            if message.text.lower() == "confirm":
+                self.bot.send_message(user_id, "Your payment has been confirmed. Here is your config:")
+                # Send the config to the user (Replace with actual config logic)
+                self.bot.send_message(user_id, "Your config: ...")
+
+    def handle_discount_code(self, query: CallbackQuery):
+        user_id = query.from_user.id
+        self.bot.send_message(user_id, "Please enter your discount code:")
 
     def tutorial(self, message: Message):
         user_id = str(message.chat.id)
@@ -214,7 +251,6 @@ class ManiHandler:
         user_id = message.chat.id
         referral_link = f"https://t.me/{YOUR_BOT_USERNAME}?start={user_id}"
         self.bot.send_message(user_id, f"Share this link with your friends: {referral_link}")
-
 
     def add_referral(self, referrer_id, referred_id):
         try:
